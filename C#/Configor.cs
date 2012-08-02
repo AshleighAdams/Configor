@@ -492,13 +492,13 @@ namespace Configor
 			return ret.ToString();
 		}
 
-		void DoDepth(StreamWriter w, int Depth)
+		void DoDepth(TextWriter w, int Depth)
 		{
 			for (int i = 0; i < Depth; i++)
 				w.Write("\t");
 		}
 
-		void RecursiveSave(StreamWriter w, IConfigorNode node, int Depth = 0)
+		void RecursiveSave(TextWriter w, IConfigorNode node, int Depth = 0)
 		{
 			DoDepth(w, Depth);
 
@@ -539,6 +539,27 @@ namespace Configor
 			w.Flush();
 
 			return true;
+		}
+
+		public override string ToString()
+		{
+			MemoryStream ms = new MemoryStream();
+			TextWriter w = new StreamWriter(ms);
+			StreamReader r = new StreamReader(ms);
+			
+			LinkedList<IConfigorNode> lst = GetRootNode().GetChildren();
+
+			foreach (IConfigorNode n in lst)
+				RecursiveSave(w, n);
+
+			ms.Seek(0, SeekOrigin.Begin);
+			string ret = r.ReadToEnd();
+
+			w.Close();
+			r.Close();
+			ms.Close();
+
+			return ret;
 		}
 
 		public IConfigorNode GetRootNode()

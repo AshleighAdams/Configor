@@ -1,3 +1,10 @@
+/*
+	A little config thingy for C++ and C#
+	Created by C0BRA
+	Copyright XiaTek.org 2012
+	Released under the MIT licence
+*/
+
 package Configor;
 
 // ********* THIS CODE IS AUTO PORTED FROM C# TO JAVA USING CODEPORTING.COM TECHNOLOGY *********
@@ -12,6 +19,8 @@ import com.codeporting.csharp2java.System.IO.BinaryReader;
 import com.codeporting.csharp2java.System.Text.msStringBuilder;
 import com.codeporting.csharp2java.System.IO.StreamWriter;
 import com.codeporting.csharp2java.System.IO.File;
+import com.codeporting.csharp2java.System.IO.TextWriter;
+import com.codeporting.csharp2java.System.IO.SeekOrigin;
 
 
 public interface IConfigorNode
@@ -235,7 +244,6 @@ public class CConfigor
 							node.Type = LexType.NONE;
 							node.Error = err;
 							ret.AddLast(node);
-							//goto ENDLOOP;
 							break ENDLOOP;
 						}
 						else
@@ -328,7 +336,6 @@ public class CConfigor
 						break;
 					case '"':
 						break EOL;
-						//goto EOL;
 					case '\r':
 					case '\n':
 						return msString.format("Expected '\"' near line {0}", _CurrentParseLine);
@@ -502,7 +509,7 @@ public class CConfigor
 		return ret.toString();
 	}
 
-	private void doDepth(StreamWriter w, int Depth)
+	private void doDepth(TextWriter w, int Depth)
 	{
 		for (int i = 0; i < Depth; i++)
 			w.write("\t");
@@ -510,11 +517,11 @@ public class CConfigor
 
 //Auto generated code to handle default paramters
 
-	private void recursiveSave(StreamWriter w, IConfigorNode node)
- {
+	private void recursiveSave(TextWriter w, IConfigorNode node)
+{
  int Depth =  0;
  recursiveSave( w, node, Depth);
-}private void recursiveSave(StreamWriter w,IConfigorNode node, int Depth)
+}private void recursiveSave(TextWriter w,IConfigorNode node, int Depth)
 	{
 		doDepth(w, Depth);
 
@@ -555,6 +562,27 @@ public class CConfigor
 		w.flush();
 
 		return true;
+	}
+
+	public /*override*/ String toString()
+	{
+		MemoryStream ms = new MemoryStream();
+		TextWriter w = new StreamWriter(ms);
+		StreamReader r = new StreamReader(ms);
+		
+		LinkedList< IConfigorNode> lst = getRootNode().getChildren();
+
+		for (IConfigorNode n : (Iterable<IConfigorNode>) lst)
+			recursiveSave(w, n);
+
+		ms.seek(0, SeekOrigin.Begin);
+		String ret = r.readToEnd();
+
+		w.close();
+		r.close();
+		ms.close();
+
+		return ret;
 	}
 
 	public IConfigorNode getRootNode()
