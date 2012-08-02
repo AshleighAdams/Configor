@@ -1,5 +1,5 @@
 /*
-	A little config thingy for C++ and C#
+	A little config thingy for C++
 	Created by C0BRA
 	Copyright XiaTek.org 2012
 	Released under the MIT licence
@@ -27,7 +27,7 @@ public:
 	virtual unsigned long GetDataLength() = 0;
 	virtual unsigned char* GetData() = 0;
 	virtual void SetData(unsigned char* pData, unsigned long Length) = 0;
-	virtual char* GetString() = 0;
+	virtual const char* GetString() = 0;
 	virtual void SetString(const char* pString) = 0;
 	virtual IConfigorNode* GetChild(std::string Name) = 0;
 	virtual IConfigorNode* GetParent() = 0;
@@ -65,7 +65,7 @@ public:
 	unsigned long GetDataLength();
 	unsigned char* GetData();
 	void SetData(unsigned char* pData, unsigned long Length);
-	char* GetString();
+	const char* GetString();
 	void SetString(const char* pString);
 	IConfigorNode* GetChild(std::string Name);
 	IConfigorNode* GetParent();
@@ -111,6 +111,7 @@ public:
 	bool LoadFromFile(const std::string& Name);
 	bool LoadFromString(char* Input, unsigned long Length);
 	bool SaveToFile(const std::string& Name);
+	std::string ToString();
 	IConfigorNode* GetRootNode();
 	std::string GetError();
 	IConfigorNode& operator[](const std::string& Index);
