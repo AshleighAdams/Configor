@@ -362,15 +362,6 @@ namespace Configor
 
 			LinkedList<CConfigorLexNode> lexed = Lexify(Input);
 
-			StreamWriter app = File.AppendText("lexed.txt");
-			app.WriteLine("====================");
-			foreach (CConfigorLexNode node in lexed)
-			{
-				if (node.Value != null)
-					app.WriteLine("{0} {1}", node.Type.ToString(), node.Value.ToString());
-			}
-			app.Close();
-
 			if (_Error.Length != 0)
 				return false;
 

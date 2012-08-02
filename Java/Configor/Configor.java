@@ -378,15 +378,6 @@ public class CConfigor
 
 		LinkedList< CConfigorLexNode> lexed = lexify(Input);
 
-		StreamWriter app = File.appendText("lexed.txt");
-		app.writeLine("====================");
-		for (CConfigorLexNode node : (Iterable<CConfigorLexNode>) lexed)
-		{
-			if (node.Value != null)
-				app.writeLine("{0} {1}", node.Type.toString(), node.Value.toString());
-		}
-		app.close();
-
 		if (_Error.length() != 0)
 			return false;
 
