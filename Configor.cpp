@@ -1,10 +1,3 @@
-/*
-	A little config thingy for C++ and C#
-	Created by C0BRA
-	Copyright XiaTek.org 2012
-	Released under the MIT licence
-*/
-
 #include "Configor.h"
 #include <sstream>
 
@@ -67,6 +60,9 @@ void CConfigorNode::DestroyData()
 void CConfigorNode::SetData(unsigned char* pData, unsigned long Length)
 {
 	bool Destroy = Length > m_Length && Length - m_Length > 128; // Only re-allocate if we're more than 128 bytes
+
+	if(!m_pData)
+		Destroy = true;
 
 	if(Destroy) // Why reallocate memory if we don't need to?
 		DestroyData();
