@@ -22,9 +22,9 @@ class IConfigorNode
 public:
 	virtual ~IConfigorNode() {};
 	virtual std::string GetName() = 0;
-	virtual unsigned long GetDataLength() = 0;
+	virtual size_t GetDataLength() = 0;
 	virtual unsigned char* GetData() = 0;
-	virtual void SetData(unsigned char* pData, unsigned long Length) = 0;
+	virtual void SetData(unsigned char* pData, size_t Length) = 0;
 	virtual std::string GetString(const std::string& Default = "") = 0;
 	virtual void SetString(const std::string& Value) = 0;
 	virtual IConfigorNode* GetChild(std::string Name) = 0;
@@ -48,7 +48,7 @@ protected:
 	IConfigorNodeList m_Children;
 	IConfigorNode* m_pParent;
 
-	unsigned long m_Length;
+	size_t m_Length;
 	unsigned char* m_pData;
 
 	void DestroyData();
@@ -60,9 +60,9 @@ public:
 	~CConfigorNode();
 
 	std::string GetName();
-	unsigned long GetDataLength();
+	size_t GetDataLength();
 	unsigned char* GetData();
-	void SetData(unsigned char* pData, unsigned long Length);
+	void SetData(unsigned char* pData, size_t Length);
 	std::string GetString(const std::string& Default);
 	void SetString(const std::string& Value);
 	IConfigorNode* GetChild(std::string Name);
@@ -86,7 +86,7 @@ struct CConfigorLexNode
 {
 	int Type;
 	void* Value;
-	unsigned long Length;
+	size_t Length;
 	std::string Error;
 };
 
@@ -95,19 +95,19 @@ typedef std::list<CConfigorLexNode*> CConfigorLexNodeList;
 class CConfigor
 {
 	IConfigorNode* m_pRootNode;
-	unsigned long m_CurrentParseLine;
+	size_t m_CurrentParseLine;
 	unsigned char* m_pCurrentParseChar;
 
 	std::string m_Error;
 
 	// will be copied
-	CConfigorLexNodeList Lexify(char* Input, unsigned long Length);
-	std::string ParseQuotes(char** Out, unsigned long* Length, char* End);
+	CConfigorLexNodeList Lexify(char* Input, size_t Length);
+	std::string ParseQuotes(char** Out, size_t* Length, char* End);
 public:
 	CConfigor();
 	~CConfigor();
 	bool LoadFromFile(const std::string& Name);
-	bool LoadFromString(char* Input, unsigned long Length);
+	bool LoadFromString(char* Input, size_t Length);
 	bool SaveToFile(const std::string& Name);
 	std::string ToString();
 	IConfigorNode* GetRootNode();
