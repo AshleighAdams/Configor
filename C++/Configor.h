@@ -1,8 +1,8 @@
 /*
-	A little config thingy for C++
+	A little config thingy for C++, C#, Java, and Lua
 	Created by C0BRA
-	Copyright XiaTek.org 2012
-	Released under the MIT licence
+	Copyright XiaTek.org 2013
+	Released under the GPLv2 licence
 */
 
 #ifndef CONFIGOR_H
@@ -17,8 +17,6 @@ class IConfigorNode;
 class CConfigor;
 typedef std::list<IConfigorNode*> IConfigorNodeList;
 
-extern CConfigor* g_pConfigor;
-
 class IConfigorNode
 {
 public:
@@ -27,8 +25,8 @@ public:
 	virtual unsigned long GetDataLength() = 0;
 	virtual unsigned char* GetData() = 0;
 	virtual void SetData(unsigned char* pData, unsigned long Length) = 0;
-	virtual const char* GetString() = 0;
-	virtual void SetString(const char* pString) = 0;
+	virtual std::string GetString(const std::string& Default = "") = 0;
+	virtual void SetString(const std::string& Value) = 0;
 	virtual IConfigorNode* GetChild(std::string Name) = 0;
 	virtual IConfigorNode* GetParent() = 0;
 	virtual void AddChild(IConfigorNode* Node) = 0;
@@ -65,8 +63,8 @@ public:
 	unsigned long GetDataLength();
 	unsigned char* GetData();
 	void SetData(unsigned char* pData, unsigned long Length);
-	const char* GetString();
-	void SetString(const char* pString);
+	std::string GetString(const std::string& Default);
+	void SetString(const std::string& Value);
 	IConfigorNode* GetChild(std::string Name);
 	IConfigorNode* GetParent();
 	void AddChild(IConfigorNode* Node);
