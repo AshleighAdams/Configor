@@ -1,8 +1,8 @@
 /*
-	A little config thingy for C++ and C#
+	A little config thingy for C++, C#, Java, and Lua
 	Created by C0BRA
-	Copyright XiaTek.org 2012
-	Released under the MIT licence
+	Copyright XiaTek.org 2013
+	Released under the GPLv2 licence
 */
 
 #include "Configor.h"
@@ -47,7 +47,7 @@ string CConfigorNode::GetName()
 	return m_Name;
 }
 
-unsigned long CConfigorNode::GetDataLength()
+size_t CConfigorNode::GetDataLength()
 {
 	return m_Length;
 }
@@ -64,9 +64,12 @@ void CConfigorNode::DestroyData()
 	m_pData = 0;
 }
 
-void CConfigorNode::SetData(unsigned char* pData, unsigned long Length)
+void CConfigorNode::SetData(unsigned char* pData, size_t Length)
 {
 	bool Destroy = Length > m_Length && Length - m_Length > 128; // Only re-allocate if we're more than 128 bytes
+
+	if(!m_pData)
+		Destroy = true;
 
 	if(Destroy) // Why reallocate memory if we don't need to?
 		DestroyData();
@@ -81,22 +84,25 @@ void CConfigorNode::SetData(unsigned char* pData, unsigned long Length)
 	memcpy(m_pData, pData, Length);
 }
 
-const char* CConfigorNode::GetString()
+string CConfigorNode::GetString(const string& Default = "")
 {
 	if(!m_pData)
-		return "";
+	{
+		this->SetString(Default);
+		return Default;
+	}
 	
-	return (const char*)m_pData;
+	return string((char*)m_pData, m_Length);
 }
 
-void CConfigorNode::SetString(const char* pString)
+void CConfigorNode::SetString(const string& Value)
 {
 	DestroyData();
 
-	m_Length = strlen(pString);
+	m_Length = Value.length();
 	m_pData = new unsigned char[m_Length + 1];
 
-	memcpy(m_pData, pString, m_Length);
+	memcpy(m_pData, Value.c_str(), m_Length);
 
 	m_pData[m_Length] = 0;
 }
@@ -215,7 +221,7 @@ bool CConfigor::LoadFromFile(const std::string& Name)
 	}
 
 	ifs.seekg(0, ios::end);
-	unsigned long len = ifs.tellg();
+	size_t len = ifs.tellg();
 	ifs.seekg(0, ios::beg);
 
 	char* cnfg = new char[len];
@@ -233,7 +239,7 @@ bool CConfigor::LoadFromFile(const std::string& Name)
 
 
 // Returns error!
-string CConfigor::ParseQuotes(char** Out, unsigned long* Length, char* End)
+string CConfigor::ParseQuotes(char** Out, size_t* Length, char* End)
 {
 	string sb;
 
@@ -308,7 +314,7 @@ string CConfigor::ParseQuotes(char** Out, unsigned long* Length, char* End)
 				break;
 			}
 		}
-	}while(End != (char*)m_pCurrentParseChar);
+	}while((size_t)m_pCurrentParseChar < (size_t)End);
 
 	{
 		std::stringstream out;
@@ -322,7 +328,7 @@ EOL:
 	return "";
 }
 
-CConfigorLexNodeList CConfigor::Lexify(char* Input, unsigned long Length)
+CConfigorLexNodeList CConfigor::Lexify(char* Input, size_t Length)
 {
 	CConfigorLexNodeList ret;
 	m_CurrentParseLine = 1;
@@ -339,7 +345,7 @@ CConfigorLexNodeList CConfigor::Lexify(char* Input, unsigned long Length)
 		case '"':
 			{
 				char* out;
-				unsigned long len;
+				size_t len;
 				string err = ParseQuotes(&out, &len, Input+Length);
 				if(err.length() > 1)
 				{
@@ -408,7 +414,7 @@ void PrintLexedNode(CConfigorLexNode* node)
 	}
 }
 
-bool CConfigor::LoadFromString(char* Input, unsigned long Length)
+bool CConfigor::LoadFromString(char* Input, size_t Length)
 {
 	CConfigorLexNodeList lexed = Lexify(Input, Length);
 
@@ -448,7 +454,7 @@ bool CConfigor::LoadFromString(char* Input, unsigned long Length)
 				it2++;
 
 				char* pName = (char*)node->Value;
-				unsigned long mLength = node->Length;
+				size_t mLength = node->Length;
 
 				IConfigorNode* node = new CConfigorNode(pCurrentNode, string(pName, mLength));
 
@@ -458,7 +464,7 @@ bool CConfigor::LoadFromString(char* Input, unsigned long Length)
 				{
 					it++;
 					unsigned char* pData = (unsigned char*)(*it2)->Value;
-					unsigned long dLength = (*it2)->Length;
+					size_t dLength = (*it2)->Length;
 					node->SetData(pData, dLength);
 					if(dLength)
 						delete [] pData;
@@ -533,12 +539,12 @@ bool ValidChar(char x)
 }
 
 // Takes data + length, outputs char + length
-void EscapeData(unsigned char* pData, unsigned long Length, unsigned char** Output, unsigned long* OutLength) 
+void EscapeData(unsigned char* pData, size_t Length, unsigned char** Output, size_t* OutLength) 
 {
 	string sb;
 	sb.reserve(Length);
 
-	for(unsigned long i = 0; i < Length; i++)
+	for(size_t i = 0; i < Length; i++)
 	{
 		char x = (char)pData[i];
 
@@ -589,7 +595,7 @@ void EscapeData(unsigned char* pData, unsigned long Length, unsigned char** Outp
 void RecursiveSave(ostream& ofs, IConfigorNode* node, int Depth = 0)
 {
 	unsigned char* pData;
-	unsigned long Length;
+	size_t Length;
 
 	EscapeData((unsigned char*)node->GetName().c_str(), node->GetName().size(), &pData, &Length);
 
