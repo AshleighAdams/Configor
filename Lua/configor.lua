@@ -29,6 +29,7 @@ function node._meta.__call(t, parent, name)
 	nde._children = {}
 	nde._self = nde
 	nde._missed_cache = false
+	nde._cache = {} -- this is the cache for accessing child nodes (needed so sorting is the same)
 	
 	setmetatable(nde, node._meta)
 	
@@ -44,34 +45,53 @@ function node._meta.__index(tbl, key) expects("table", "string")
 		return rawget(node, key)
 	end
 	
-	local ret = rawget(tbl, "_children")[key] or node(rawget(tbl, "_self"), key)
-	
-	return ret
-	--error("not imp", 2)
+	return rawget(tbl, "_self"):get_child(key) or node(rawget(tbl, "_self"), key)
 end
 
 
 function node:name()  expects(node._meta)
-	return self._name
+	return rawget(self, "_name")
 end
 function node:data()
-	return self._value
+	return rawget(self, "_value")
 end
 function node:set_name(name) expects(node._meta, "string")
-	self._name = name
+	rawset(self, "_name", name)
 end
 function node:parent() expects(node._meta)
-	return self._parent
+	return rawget(self, "_parent")
 end
 
 function node:has_children() expects(node._meta)
-	return table.Count(self._children) ~= 0
+	return table.Count(self:children()) ~= 0
 end
 function node:children() expects(node._meta)
-	return self._children
+	return rawget(self, "_children")
 end
-function node:add_child(node)  expects(node._meta, node._meta)
-	self._children[node:name()] = node
+function node:get_child(key) expects(node._meta, "string")
+	local cache = rawget(self, "_cache")
+	if cache[key] then return cache[key] end
+	
+	for k,v in pairs(self._children) do
+		if v:name() == key then
+			cache[key] = v
+			return v
+		end
+	end
+	return nil -- wasn't found
+end
+function node:add_child(node) expects(node._meta, node._meta)
+	table.insert(self._children, node)
+end
+function node:remove_child(node) expects(node._meta, node._meta)
+	local name = node:name()
+	if self._cache[name] == node then self._cache[name] = nil end
+	for k,v in pairs(self._children) do
+		if v == node then
+			table.remove(self._children, k)
+			return
+		end
+	end
 end
 
 function node:value(default) expects(node._meta, "*")
@@ -217,7 +237,7 @@ local function tokenize(str)
 		elseif char == '"' then
 			local endpos, val = parse_quotes(str, pos)
 			if endpos == nil then
-				return nil, string.format("error parsing string literal: %s (started line %i)", val, cur_line)
+				return nil, string.format("%i: error parsing string literal: %s", cur_line, val)
 			end
 			pos = endpos
 			table.insert(ret, {type="string", value=val, line=cur_line})
@@ -234,7 +254,6 @@ end
 
 local function parse(tokens)
 	local root_node = node(nil, "root")
-	
 	local current_node = root_node
 	local new_node = nil
 	
@@ -259,7 +278,7 @@ local function parse(tokens)
 		elseif token.type == "operator" then
 			if token.operator == "{" then
 				if not new_node then
-					return nil, string.format("%i: no parent to asign children", token.cur_line)
+					return nil, string.format("%i: no parent to assign children", token.line)
 				end
 				current_node = new_node
 				new_node = nil
@@ -267,18 +286,19 @@ local function parse(tokens)
 				current_node = current_node:parent()
 				new_node = nil
 				if current_node == nil then
-					return nil, string.format("%i: unexpected '}'", token.cur_line)
+					return nil, string.format("%i: unexpected '}'", token.line)
 				end
 			else
-				return nil, string.format("%i: unknown operator '%s'", token.cur_line, token.operator)
+				return nil, string.format("%i: unknown operator '%s'", token.line, token.operator)
 			end
 		end
 		
 		i = i + 1
 	end
 	
-	-- TODO: check all have been closed
-	--print(root_node, parent_node, current_node)
+	if current_node ~= root_node then
+		return nil, string.format("%i: expected operator '}' at EOF", tokens[#tokens].line)
+	end
 	return root_node
 end
 
@@ -291,8 +311,19 @@ function configor.loadstring(str)
 	return ret, err
 end
 
-function configor.loadfile(path)
+function configor.loadfile(path, create)
+	create = create ~= nil and create or true
 	local file, err =  io.open(path, "r")
+	
+	-- attempt to make it
+	if not file and create then
+		local f = io.open(path, "w")
+		if f then
+			f:close()
+			file, err =  io.open(path, "r")
+		end
+	end
+	
 	if not file then return nil, string.format("could not open file (%s)", err) end
 	
 	local contents = file:read("*a")
@@ -334,7 +365,13 @@ local function serialize_nodes(nodes, depth)
 	local ret = ""
 	
 	for k,node in pairs(nodes) do
-		ret = ret .. tabs .. quotify(node:name()) .. " " .. quotify(node:data()) .. "\n"
+		ret = ret .. tabs .. quotify(node:name())
+		
+		if node:data() ~= "" then
+			ret = ret .. " " .. quotify(node:data()) .. "\n"
+		else
+			ret = ret .. "\n"
+		end
 		
 		if node:has_children() then
 			ret = ret .. tabs .. "{\n"
