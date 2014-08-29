@@ -1,4 +1,8 @@
 local configor = {}
+
+-- this function is just type checking
+if not expects then expects = function() end end
+
 -- configor node
 local node = {}
 node._meta = {}
