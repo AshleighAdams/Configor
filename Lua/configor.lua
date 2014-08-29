@@ -131,29 +131,29 @@ end
 
 local function inrange(val, ...)
 	local args = {...}
-	
+	local count = 0
 	for i = 1, #args do
 		local min, max = args[i][1], args[i][2]
-		if not (val >= from and val <= to) then
-			return false
+		if val >= min and val <= max then
+			return true
 		end
 	end
-	return true
+	return false
 end
 -- returns end position, string
 local function parse_hex(str, pos, len)
-	if pos + 1 < len then
+	if pos + 2 > len then
 		return nil, "not enough room to parse hex literal"
 	end
 	
-	local a = str:sub(pos, pos):lower()
-	local b = str:sub(pos + 1, pos + 1):lower()
+	local a = str:sub(pos + 1, pos + 1):lower()
+	local b = str:sub(pos + 2, pos + 2):lower()
 	
-	if not inrange(a, {"a", "f"}, {"0", "9"}) or not inrange(a, {"a", "f"}, {"0", "9"}) then
+	if not inrange(a, {"a", "f"}, {"0", "9"}) or not inrange(b, {"a", "f"}, {"0", "9"}) then
 		return nil, "invalid hex digit: 0x" .. a .. b
 	end
 	
-	return 2, tonumber(a .. b, 16)
+	return 3, tonumber(a .. b, 16) -- ("xFF"):len() == 3
 end
 
 local literals = {
