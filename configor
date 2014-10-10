@@ -1,0 +1,73 @@
+#!/usr/bin/env lua
+
+local configor = require("configor")
+
+local args = {...}
+
+local options = {
+	["dont-save"] = false
+}
+local shorthands = {
+	s = "dont-save"
+}
+
+local failed_opts = false
+while args[1] ~= nil do
+	if args[1]:sub(1, 1) ~= "-" then break end
+	local opt = table.remove(args, 1)
+	
+	if opt:sub(1, 2) == "--" then --longhand
+		if options[opt:sub(3)] == nil then print("unknown option --" .. opt:sub(3)) failed_opts = true end
+		options[opt:sub(3)] = true
+	else
+		local letters = opt:sub(2)
+		for i = 1, #letters do
+			local sopt = letters:sub(i,i)
+			if not shorthands[sopt] then print("unknown shorthand -" .. sopt) failed_opts = true end
+			options[shorthands[sopt]] = true
+		end
+	end
+end
+if failed_opts then os.exit(1) end
+
+local file = args[1]
+local name = args[2]
+local action = args[3]
+local value = args[4]
+local typestr = args[5]
+
+local function usage(msg, ...)
+	if msg ~= nil then print(msg:format(...)) end
+	print("usage: configor [OPTION...] FILE NAME ACTION VALUE [TYPE]")
+	os.exit(1)
+end
+
+if not file or not action or not name or not value then usage() end
+
+local cfg = assert(configor.loadfile(file))
+
+local node = cfg
+
+name = name:match("/?(.+)") -- remove trailing slash if it exists
+name = name:gsub("(.-)/", function(path)
+	node = node[path]
+	return ""
+end)
+node = node[name]
+
+if typestr then
+	if not configor.from_string[typestr] then	usage("unknown type %s", typestr) end
+	value = configor.from_string[typestr](value)
+end
+
+if action == "get" then
+	print(node:value(value))
+elseif action == "set" then
+	node:set_value(value)
+else
+	usage("invalid action %s (must be \"get\" or \"set\")", action)
+end
+
+if not options["dont-save"] then
+	configor.savefile(cfg, file)
+end
