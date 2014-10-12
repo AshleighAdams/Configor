@@ -369,6 +369,7 @@ until true end
 replacements["'"] = "\\'"
 replacements['"'] = '\\"'
 replacements["	"] = "	" -- tab
+replacements["\\"] = "\\\\" -- replace a backslash with 2 backslashes
 
 
 local function quotify(str)
